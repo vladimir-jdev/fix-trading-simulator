@@ -122,6 +122,18 @@ $ ./run-project-native.sh
 ```
 **Prerequisites:** Ensure your Docker environment is allocated sufficient resources (8GB+ RAM recommended for the compilation stage).
 
+### Native Distroless Mode (Minimal & Secure)
+Extends the Native Image mode by packaging the executable into a distroless container. These images contain only the application, removing shells (sh, bash) and OS tools to minimize the attack surface and image size. Uses Multi-stage Docker builds to compile entirely from source.
+
+**Files used:**
+`./run-project-native-distroless.sh` and `docker-compose-native-distroless.yml`.
+
+**Startup Command:**
+```
+$chmod +x ./run-project-native-distroless.sh
+$ ./run-project-native-distroless.sh
+```
+
 ### Using the Docker Hub Images
 
 Inside the root folder of the project, execute:

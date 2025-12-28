@@ -1,0 +1,138 @@
+services:
+  # Exchange Backend (FIX Acceptor)
+  exchange-back-end:
+    container_name: exchange-back-end
+    image: felipewind/exchange-back-end:1.0-native-distroless
+    build:
+      context: .
+      dockerfile: ./exchange-back-end/src/main/docker/Dockerfile.native-distroless
+    ports:
+      - "8090:8090"
+    networks:
+      - fix-trading-simulator-net
+    depends_on:
+      postgresql-qfj:
+        condition: service_healthy
+    mem_limit: 256m
+    environment:
+      # DB config
+      - QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://postgresql-qfj:5432/postgres?currentSchema=exchange
+      - QUARKUS_DATASOURCE_USERNAME=postgres
+      - QUARKUS_DATASOURCE_PASSWORD=postgres
+      - QUARKUS_HTTP_CORS=true
+      - QUARKUS_HTTP_CORS_ORIGINS=/.*/
+      # QuickFIX Acceptor settings
+      - QUICKFIX=[default],
+        [session],
+        BeginString=FIX.4.4,
+        SenderCompID=EXEC,
+        TargetCompID=BANZAI,
+        ConnectionType=acceptor,
+        StartTime=00:00:00,
+        EndTime=00:00:00,
+        SocketAcceptPort=9880,
+        ScreenLogShowHeartBeats=Y,
+        JdbcStoreMessagesTableName=messages,
+        JdbcStoreSessionsTableName=sessions,
+        JdbcLogHeartBeats=Y,
+        JdbcLogIncomingTable=messages_log_incoming,
+        JdbcLogOutgoingTable=messages_log_outgoing,
+        JdbcLogEventTable=event_log,
+        JdbcSessionIdDefaultPropertyValue=not_null,
+        AllowedRemoteAddresses=127.0.0.1\,172.0.0.2\,172.0.0.3\,broker-back-end
+
+  # Broker Backend (FIX Initiator)
+  broker-back-end:
+    container_name: broker-back-end
+    image: felipewind/broker-back-end:1.0-native-distroless
+    build:
+      context: .
+      dockerfile: ./broker-back-end/src/main/docker/Dockerfile.native-distroless
+    ports:
+      - "8080:8080"
+    networks:
+      - fix-trading-simulator-net
+    depends_on:
+      postgresql-qfj:
+        condition: service_healthy
+    mem_limit: 256m
+    environment:
+      # DB config
+      - QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://postgresql-qfj:5432/postgres?currentSchema=broker
+      - QUARKUS_DATASOURCE_USERNAME=postgres
+      - QUARKUS_DATASOURCE_PASSWORD=postgres
+      - QUARKUS_HTTP_CORS=true
+      - QUARKUS_HTTP_CORS_ORIGINS=/.*/
+      # QuickFIX Initiator settings
+      - QUICKFIX=[default],
+        [session],
+        BeginString=FIX.4.4,
+        SenderCompID=BANZAI,
+        TargetCompID=EXEC,
+        ConnectionType=initiator,
+        StartTime=00:00:00,
+        EndTime=00:00:00,
+        ReconnectInterval=5,
+        HeartBtInt=30,
+        SocketConnectHost=exchange-back-end,
+        SocketConnectPort=9880,
+        ScreenLogShowHeartBeats=Y,
+        JdbcStoreMessagesTableName=messages,
+        JdbcStoreSessionsTableName=sessions,
+        JdbcLogHeartBeats=Y,
+        JdbcLogIncomingTable=messages_log_incoming,
+        JdbcLogOutgoingTable=messages_log_outgoing,
+        JdbcLogEventTable=event_log,
+        JdbcSessionIdDefaultPropertyValue=not_null
+
+  postgresql-qfj:
+    container_name: postgresql-qfj
+    image: postgres
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - fix-trading-simulator-net
+    # :Z is for SELinux
+    volumes:
+      - ./init-exchange.sql:/docker-entrypoint-initdb.d/init-exchange.sql:Z
+      - ./init-broker.sql:/docker-entrypoint-initdb.d/init-broker.sql:Z
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Frontends
+  exchange-front-end:
+    container_name: exchange-front-end
+    image: felipewind/exchange-front-end:1.0
+    build:
+      context: ./exchange-front-end/
+      dockerfile: ./Dockerfile
+    ports:
+      - "8095:80"
+    networks:
+      - fix-trading-simulator-net
+    depends_on:
+      - exchange-back-end
+
+  broker-front-end:
+    container_name: broker-front-end
+    image: felipewind/broker-front-end:1.0
+    build:
+      context: ./broker-front-end/
+      dockerfile: ./Dockerfile
+    ports:
+      - "8085:80"
+    networks:
+      - fix-trading-simulator-net
+    depends_on:
+      - broker-back-end
+
+networks:
+  fix-trading-simulator-net:
+    driver: bridge
