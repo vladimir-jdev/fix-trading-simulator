@@ -154,6 +154,17 @@ Docker Hub images:
 >
 > Unlike the Docker method, this mode **REQUIRES** you to install Java 11+, Maven, Node.js, and Angular CLI on your local machine.
 
+> **Warning! QuickFIX/J Dependency Setup**
+> 
+> This project relies on the latest version of **QuickFIX/J**, which is not yet available in the public Maven Central
+> repository and must be assembled directly from the GitHub source code. Before building the project, ensure that 
+> Docker is running and execute the initialization script below. This will compile the required dependency within a 
+> container and install it into your local Maven repository.
+> ```
+> $chmod +x quickfixj-m2-local.sh
+> $./quickfixj-m2-local.sh
+> ```
+
 The default version of the development back-end projects is using H2 data base (in memory).
 
 It's possible to change the `application.properties` and set them to run with PostgreSQL, in this case you should start a PostgreSQL container:
