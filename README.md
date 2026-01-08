@@ -63,6 +63,14 @@ List the FIX events.
 
 List the messages received and sent.
 
+## Known Issues. Native Image Compatibility (Apache Mina & QuickFIX/J)
+
+While the project can be successfully compiled into a Native Image using GraalVM, the runtime functionality related to the FIX protocol **will not work** in native mode.
+
+**Reason:** This project uses `org.quickfixj`, which depends on the **Apache Mina** networking library. Apache Mina relies heavily on dynamic class loading and reflection mechanisms that are currently not fully compatible with GraalVM Native Image. This is a known upstream limitation affecting many projects using QuickFIX/J (including Apache Camel extensions).
+
+**Workaround:** Please use the **Standard Mode (JVM)** via `./run-project.sh` for full functionality. The Native 
+mode scripts (`run-project-native.sh` & `run-project-native-distroless.sh`) are kept for archival and experimental purposes only.
 
 # Running the project
 
@@ -90,6 +98,15 @@ CONTAINER ID        IMAGE                               COMMAND                 
 8106b9a48217        felipewind/exchange-back-end:1.0    "/deployments/run-ja…"   16 minutes ago      Up 16 minutes       0.0.0.0:8090->8090/tcp   exchange-back-end
 6b53a07b72ac        postgres                            "docker-entrypoint.s…"   16 minutes ago      Up 16 minutes       0.0.0.0:5432->5432/tcp   postgresql-qfj
 ```
+
+### Known Issues. Native Image Compatibility (Apache Mina & QuickFIX/J)
+
+While the project can be successfully compiled into a Native Image using GraalVM, the runtime functionality related to the FIX protocol **will not work** in native mode.
+
+**Reason:** This project uses `quickfixj`, which depends on the **Apache Mina** networking library. Apache Mina relies heavily on dynamic class loading and reflection mechanisms that are currently not fully compatible with GraalVM Native Image. This is a known upstream limitation affecting many projects using QuickFIX/J (including Apache Camel extensions).
+
+**Workaround:** Please use the **Standard Mode (JVM)** via `./run-project.sh` for full functionality. The Native mode scripts (`run-project-native.sh`) are kept for archival and experimental purposes only.
+
 ### Standard Mode (JVM)
 
 This mode is suitable for development, debugging, and general use. It compiles and runs Java applications inside a

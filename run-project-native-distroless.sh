@@ -1,6 +1,18 @@
 #!/bin/bash
 set -e
 
+echo "========================================================================================"
+echo "⚠️  WARNING: NATIVE IMAGE LIMITATION  ⚠️"
+echo "========================================================================================"
+echo "This project relies on QuickFIX/J (Apache Mina), which has known compatibility issues"
+echo "with GraalVM Native Image. The project WILL build, but runtime network operations"
+echo "will likely FAIL."
+echo ""
+echo "It is highly recommended to use the JVM mode: ./run-project.sh"
+echo "========================================================================================"
+echo ""
+read -p "Press [Enter] to continue explicitly (or Ctrl+C to abort)..."
+
 COMPOSE_FILE="./docker-compose-native-distroless.yml"
 BUILDER_IMAGE="qfj-builder"
 BUILDER_CONTAINER="qfj-extractor"
